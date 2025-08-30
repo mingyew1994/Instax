@@ -1,89 +1,303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Daily Quote</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instax Memory</title>
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Tap to reveal a memory in an instant camera style." />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: url('background.jpg') no-repeat center center fixed;
-      background-size: cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      padding: 20px;
+    :root{
+      --bg:#0b1220; /* deep navy */
+      --fg:#e5e7eb; /* slate-100 */
+      --muted:#94a3b8; /* slate-400 */
+      --accent:#22d3ee; /* cyan-400 */
+      --accent-2:#f472b6; /* pink-400 */
+      --card:#111827; /* slate-900 */
+      --shadow: 0 10px 30px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--fg);
+      background: radial-gradient(1200px 800px at 10% 10%, rgba(34,211,238,.05), transparent 40%),
+                  radial-gradient(1000px 700px at 90% 20%, rgba(244,114,182,.045), transparent 40%),
+                  url('background.jpg') center/cover fixed no-repeat,
+                  var(--bg);
+      background-blend-mode: screen, screen, multiply, normal;
+    }
+    .wrap{
+      min-height:100%;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+    }
+    header, footer{
+      padding: 14px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    header h1{
+      margin:0;
+      font-size: clamp(18px, 2.6vw, 22px);
+      letter-spacing:.4px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);}
+    .container{
+      display:grid; place-items:center; padding: 24px; position:relative;
+    }
+    .stage{
+      width:min(680px, 92vw);
+      aspect-ratio: 16/10;
+      background: linear-gradient(160deg, rgba(17,24,39,.7), rgba(2,6,23,.7));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:24px;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      display:grid;place-items:center;
+      backdrop-filter: blur(2px) saturate(120%);
+      --slotH: 64%;
     }
 
-    .box {
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 16px;
-      padding: 30px 40px;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-      text-align: center;
-      backdrop-filter: blur(4px);
+    /* Decorative camera top */
+    .camera{position:absolute; top:-110px; width:110%; left:-5%; height:260px; background:linear-gradient(#0f172a, #020617); border-bottom:2px solid rgba(255,255,255,.12); filter: drop-shadow(0 20px 40px rgba(0,0,0,.35));}
+    .lens{position:absolute; left:50%; top:64px; transform:translateX(-50%); width:160px; height:160px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #22d3ee 0 15%, #0ea5b7 16% 30%, #020617 31% 100%); box-shadow: inset 0 0 40px rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.5);} 
+    .flash{position:absolute; right:40px; top:70px; width:80px; height:28px; border-radius:8px; background: linear-gradient(90deg, #1f2937, #0b1324); border:1px solid rgba(255,255,255,.1);} 
+
+    /* Photo slot */
+    .slot{ position:absolute; top:calc(120px + 30px); left:50%; transform:translateX(-50%); width:72%; height:var(--slotH); border-radius:10px; background:linear-gradient(#0b1220, #0b1220); border:1px dashed rgba(255,255,255,.14); opacity:.7;}
+
+    /* Polaroid card */
+    .polaroid{ position:absolute; top:calc(120px + 30px + var(--slotH)); left:50%; transform:translate(-50%, -10%); width:min(440px, 72%); aspect-ratio: 3/3.6; background:#f8fafc; color:#0f172a; border-radius: 8px 8px 12px 12px; box-shadow: var(--shadow); display:grid; grid-template-rows: 1fr auto; overflow:hidden; will-change:transform; }
+    .photo{ position:relative; background:#111827; }
+    .photo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition: opacity .9s ease-out; }
+    .caption{ padding:12px 14px 16px; font: 500 14px/1.3 ui-sans-serif, system-ui; letter-spacing:.2px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .caption span{ opacity:.9 }
+    .sig{ font-family: "Comic Sans MS", "Bradley Hand", ui-rounded, cursive; font-weight:600; }
+
+    .actions{ position:absolute; bottom:16px; right:16px; display:flex; gap:10px; }
+    .btn{ appearance:none; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--fg); padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:600; font-size:14px; transition:.2s transform, .2s background; backdrop-filter: blur(6px) saturate(130%); }
+    .btn:hover{ transform: translateY(-1px); background:rgba(255,255,255,.12) }
+    .btn:active{ transform: translateY(1px) }
+
+    .hint{ position:absolute; bottom:18px; left:20px; font-size:13px; color:var(--muted); }
+
+    /* Floating shapes */
+    .orb{ position:absolute; border-radius:50%; filter:blur(20px); opacity:.35; animation: float 12s ease-in-out infinite; }
+    .orb.one{ width:140px; height:140px; background:radial-gradient(#22d3ee, transparent 60%); left:-30px; top:40%; animation-delay:-3s}
+    .orb.two{ width:180px; height:180px; background:radial-gradient(#f472b6, transparent 60%); right:-40px; top:10%; animation-delay:-6s}
+    @keyframes float{ 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(-16px)} }
+
+    /* Reveal animation */
+    .reveal{ animation: pull 2.3s cubic-bezier(.22,.67,.16,.99) forwards; }
+    @keyframes pull{
+      0%{ transform:translate(-50%, -10%) rotate(-2deg) }
+      12%{ transform:translate(-50%, -2%) rotate(2deg) }
+      50%{ transform:translate(-50%, -80%) rotate(-1deg) }
+      100%{ transform:translate(-50%, -120%) rotate(0deg) }
     }
 
-    h2 {
-      color: #1e40af;
-      margin-bottom: 20px;
-    }
+    .toast{ position:fixed; inset:auto 0 20px 0; margin:auto; width:max-content; max-width:90vw; background:#111827; color:#e5e7eb; border:1px solid rgba(255,255,255,.14); padding:10px 14px; border-radius:10px; box-shadow: var(--shadow); opacity:0; transform: translateY(10px); transition:.3s ease; font-size:14px; }
+    .toast.show{ opacity:1; transform: translateY(0) }
 
-    p {
-      font-size: 1.3em;
-      color: #1f2937;
-      white-space: pre-wrap;
-    }
-
-    .ref {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #6b7280;
-    }
-
-    .error {
-      color: #b91c1c;
-      font-size: 1em;
-      margin-top: 15px;
-    }
+    a.link{ color:#7dd3fc; text-decoration: none; border-bottom:1px dashed rgba(125,211,252,.5) }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h2>Today's Encouragement</h2>
-    <p id="quote">Loading...</p>
-    <div class="ref" id="author"></div>
-    <div class="error" id="error"></div>
+  <div class="wrap">
+    <header>
+      <h1>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M5 7h14l1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2l1-12Z" stroke="currentColor" stroke-width="1.4"/><path d="M16 7a4 4 0 1 1-8 0" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="4" width="20" height="4" rx="1.6" stroke="currentColor" stroke-width="1.4"/></svg>
+        Instax Memory
+      </h1>
+      <span class="badge">Tap • Reveal • Share</span>
+    </header>
+
+    <main class="container">
+      <div class="stage" id="stage">
+        <div class="camera"></div>
+        <div class="lens"></div>
+        <div class="flash"></div>
+        <div class="slot"></div>
+
+        <div class="polaroid" id="polaroid" aria-live="polite">
+          <div class="photo">
+            <img id="photo" alt="Memory photo" />
+          </div>
+          <div class="caption">
+            <span id="caption"><span class="sig">Click</span> the shutter to reveal…</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 4v16m8-8H4" stroke="#0f172a" stroke-width="2"/></svg>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btnSnap">Snap</button>
+          <button class="btn" id="btnShare">Share</button>
+          <button class="btn" id="btnSave">Save</button>
+        </div>
+
+        <div class="hint">Tip: use <span style="font-family:monospace">?img=</span> and <span style="font-family:monospace">&msg=</span> in the URL to customize</div>
+
+        <div class="orb one"></div>
+        <div class="orb two"></div>
+      </div>
+    </main>
+
+    <footer>
+      <small style="opacity:.7">Made with ❤️ • <a class="link" href="#" id="makeVCF">add contact</a></small>
+      <small style="opacity:.7">© <span id="year"></span></small>
+    </footer>
   </div>
 
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <canvas id="canvas" style="display:none"></canvas>
+
   <script>
-    async function loadQuote() {
-      const quoteEl = document.getElementById("quote");
-      const authorEl = document.getElementById("author");
-      const errEl = document.getElementById("error");
+    const $ = (sel)=>document.querySelector(sel)
+    const photo = $('#photo');
+    const caption = $('#caption');
+    const polaroid = $('#polaroid');
+    const toastEl = $('#toast');
+    const yearEl = $('#year');
+    yearEl.textContent = new Date().getFullYear();
 
-      try {
-        const res = await fetch("quotes.json");
-        if (!res.ok) throw new Error("File not found");
-        
-        const quotes = await res.json();
-        const randomIndex = Math.floor(Math.random() * quotes.length);
-        const q = quotes[randomIndex];
+    // Read URL params for customization
+    const params = new URLSearchParams(location.search);
+    const imgParam = params.get('img');
+    const msgParam = params.get('msg');
+    const whoParam = params.get('who') || 'From us';
 
-        quoteEl.textContent = q.quote;
-        authorEl.textContent = "— " + q.author;
-      } catch (e) {
-        quoteEl.textContent = "⚠️ Unable to load quotes.";
-        authorEl.textContent = "";
-        errEl.textContent = "Make sure quotes.json is in the same folder as index.html.";
+    // Default image tries local background.jpg, otherwise a gradient
+    const fallbackData = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1080' height='1350'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0' stop-color='%2322d3ee'/><stop offset='1' stop-color='%23f472b6'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)'/><g fill='white' opacity='.9' font-family='Verdana' font-size='68' letter-spacing='1.2' ><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'>Instax Memory</text></g></svg>`)}`;
+
+    const defaultImage = imgParam || 'background.jpg';
+    const defaultMsg = msgParam || 'A little instant joy for your day ✨';
+
+    // Preload image, handle failure gracefully
+    function loadImage(src){
+      return new Promise(res=>{
+        const img = new Image();
+        img.onload = ()=>res(src);
+        img.onerror = ()=>res(fallbackData);
+        img.crossOrigin = 'anonymous';
+        img.src = src;
+      })
+    }
+
+    // Reveal animation
+    async function snap(){
+      // set content first
+      const src = await loadImage(defaultImage);
+      photo.src = src;
+      caption.innerHTML = `${escapeHtml(defaultMsg)} <span style="opacity:.6">— ${escapeHtml(whoParam)}</span>`;
+      // kick animation
+      polaroid.classList.remove('reveal');
+      void polaroid.offsetWidth; // reflow to restart animation
+      polaroid.classList.add('reveal');
+      // fade-in image slightly after motion starts
+      setTimeout(()=>{ photo.style.opacity = 1; }, 600);
+      ping('Snapped!');
+      maybeVibrate();
+    }
+
+    function maybeVibrate(){
+      if (navigator.vibrate) navigator.vibrate([40,40,20]);
+    }
+
+    function ping(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(()=> toastEl.classList.remove('show'), 1800);
+    }
+
+    // Share using Web Share API
+    async function share(){
+      const shareData = {
+        title: 'Instax Memory',
+        text: defaultMsg,
+        url: location.href
+      };
+      if (navigator.share){
+        try{ await navigator.share(shareData); ping('Shared!'); }
+        catch{ /* noop */ }
+      } else {
+        await navigator.clipboard.writeText(location.href);
+        ping('Link copied to clipboard');
       }
     }
 
-    loadQuote();
+    // Save an image of the polaroid using Canvas (with caption)
+    async function save(){
+      const src = await loadImage(photo.src || defaultImage);
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const W = 900, H = 1080; // 5:6
+      canvas.width = W; canvas.height = H;
+      // polaroid background
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(0,0,W,H);
+      const pad = 40; const capH = 160;
+      // photo area
+      const imgW = W - pad*2, imgH = H - pad*2 - capH;
+      const img = await createImageBitmap(await (await fetch(src)).blob()).catch(()=>null);
+      if (img){ ctx.drawImage(img, pad, pad, imgW, imgH); }
+      else { // gradient fallback
+        const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#22d3ee'); g.addColorStop(1,'#f472b6');
+        ctx.fillStyle = g; ctx.fillRect(pad,pad,imgW,imgH);
+      }
+      // caption
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 34px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.fillText(truncate(defaultMsg, 34), pad, H - pad - 60);
+      ctx.font = '600 30px ui-rounded, system-ui, cursive';
+      ctx.fillText('— ' + whoParam, pad, H - pad - 20);
+      // download
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url; a.download = 'instax-memory.png'; a.click();
+      ping('Saved to photos');
+    }
+
+    // Build and download vCard for contact add
+    function addVCF(){
+      const name = params.get('name') || 'Our Instax';
+      const phone = params.get('phone') || '';
+      const email = params.get('email') || '';
+      const site = location.origin + location.pathname;
+      const vcf = `BEGIN:VCARD\nVERSION:3.0\nN:;${sanitize(name)};;;\nFN:${sanitize(name)}\nTEL;TYPE=CELL:${sanitize(phone)}\nEMAIL;TYPE=INTERNET:${sanitize(email)}\nURL:${sanitize(site)}\nEND:VCARD`;
+      const blob = new Blob([vcf], {type:'text/vcard'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = (name.toLowerCase().replace(/\s+/g,'-')||'contact') + '.vcf'; a.click();
+      URL.revokeObjectURL(url);
+      ping('Contact card downloaded');
+    }
+
+    // Helpers
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+    function sanitize(s){ return (s||'').replace(/\n|\r/g,' '); }
+    function truncate(s, n){ return s.length>n ? s.slice(0, n-1)+"…" : s; }
+
+    // Bindings
+    document.getElementById('btnSnap').addEventListener('click', snap);
+    document.getElementById('btnShare').addEventListener('click', share);
+    document.getElementById('btnSave').addEventListener('click', save);
+    document.getElementById('makeVCF').addEventListener('click', e=>{ e.preventDefault(); addVCF(); });
+
+    // Auto-run on first tap/enter
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Enter') snap(); });
+    document.getElementById('stage').addEventListener('click', (e)=>{
+      const id = (e.target.id||'');
+      if(!/btnSnap|btnShare|btnSave|makeVCF/.test(id)) snap();
+    });
+
+    // If opened from NFC, auto snap once after load (gives a delightful instant reveal)
+    window.addEventListener('load', ()=> setTimeout(snap, 450));
   </script>
 </body>
 </html>
